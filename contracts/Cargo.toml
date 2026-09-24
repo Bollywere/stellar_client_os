@@ -7,12 +7,9 @@ members = [
     "nft-stream",
     "campaign-funding",
     "soulbound-badge",
-    "verifier-penalty"
+    "verifier-penalty",
     "planter",
     "dispute-arbiter",
-    "campaign-funding",
-    "soulbound-badge"
-    "soulbound-badge",
     "timelock",
     "upgrade-proxy",
     "sponsor-crowdfunding",
