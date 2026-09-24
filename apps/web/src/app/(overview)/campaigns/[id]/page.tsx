@@ -16,6 +16,7 @@ import {
   Globe,
   AlertTriangle,
   Crown,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import { BackerCommunity } from "@/components/modules/campaign/community/BackerC
 import { TopBackers } from "@/components/modules/campaign/backers/TopBackers";
 import { TOP_BACKERS_LIMIT } from "@/types/campaign-backers";
 import { CampaignFundingVelocityChart } from "@/components/modules/campaign/FundingVelocityChart";
+import CampaignARViewer from "@/components/modules/campaigns/CampaignARViewer";
 
 const translations = {
   es: {
@@ -109,6 +111,9 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
       ],
     },
     treesPlanted: "1,500",
+    targetTrees: 2000,
+    treeType: "Mangrove",
+    location: "Amazon Basin, South America",
   };
 
   // The mock detail page renders as the campaign creator, so creator-only
@@ -278,9 +283,12 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
       {/* Main Content Tabs (Overview, Sponsor Wall #724, Top Backers, Co-Creators #722) */}
       {/* Backer community spaces (#788) render inside the overview sidebar. */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-2 gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1 md:grid-cols-4 xl:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-2 gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1 md:grid-cols-4 xl:grid-cols-9">
           <TabsTrigger value="overview" className="text-xs font-semibold data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <Target className="mr-1.5 h-4 w-4" /> Overview & Story
+          </TabsTrigger>
+          <TabsTrigger value="ar-view" className="text-xs font-semibold data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <Camera className="mr-1.5 h-4 w-4 text-emerald-300" /> AR Tree View
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs font-semibold data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <Heart className="mr-1.5 h-4 w-4 text-rose-400" /> Sponsor Wall (#724)
@@ -367,6 +375,15 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
               <BackerCommunity campaignId={campaign.id} canManage={isCreatorView} />
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="ar-view">
+          <CampaignARViewer
+            treesPlanted={Number(campaign.treesPlanted.replace(/,/g, ""))}
+            targetTrees={campaign.targetTrees}
+            treeType={campaign.treeType}
+            location={campaign.location}
+          />
         </TabsContent>
 
         {/* Tab 2: Sponsor Wall (#724) */}
