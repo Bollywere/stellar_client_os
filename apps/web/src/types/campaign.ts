@@ -33,6 +33,7 @@ export interface CampaignData {
   deadline: number;
   location?: string;
   imageUrl?: string;
+  sponsorCount?: number;
   uniqueContributors?: number;
   contributionCount?: number;
 }

@@ -19,7 +19,7 @@ import {
 import { CampaignData, CampaignFilterOptions, CampaignStatus, TreeType } from "@/types/campaign";
 
 // Sample initial campaign records for demonstration & discovery
-const INITIAL_CAMPAIGNS: CampaignData[] = [
+export const INITIAL_CAMPAIGNS: CampaignData[] = [
   {
     id: "1",
     title: "Amazon Rainforest Reforestation Initiative",
@@ -37,6 +37,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 10,
     deadline: Date.now() / 1000 + 86400 * 20,
     location: "Brazil / Peru Basin",
+    sponsorCount: 42,
   },
   {
     id: "2",
@@ -55,6 +56,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 15,
     deadline: Date.now() / 1000 + 86400 * 15,
     location: "Kenya & Ethiopia border",
+    sponsorCount: 31,
   },
   {
     id: "3",
@@ -73,6 +75,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 30,
     deadline: Date.now() / 1000 - 86400 * 2,
     location: "Southeast Asia Coastal Region",
+    sponsorCount: 58,
   },
   {
     id: "4",
@@ -91,6 +94,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 45,
     deadline: Date.now() / 1000 - 86400 * 5,
     location: "European Alpine Ridge",
+    sponsorCount: 12,
   },
   {
     id: "5",
@@ -109,6 +113,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 60,
     deadline: Date.now() / 1000 - 86400 * 12,
     location: "Central America",
+    sponsorCount: 76,
   },
   {
     id: "6",
@@ -127,6 +132,7 @@ const INITIAL_CAMPAIGNS: CampaignData[] = [
     createdAt: Date.now() / 1000 - 86400 * 5,
     deadline: Date.now() / 1000 + 86400 * 25,
     location: "Madagascar",
+    sponsorCount: 27,
   },
 ];
 
