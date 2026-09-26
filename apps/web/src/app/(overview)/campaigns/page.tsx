@@ -6,9 +6,10 @@ import { Rocket, Plus, Heart, Users, ShieldCheck, ChevronRight, Trophy, Scale, S
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SuccessStories from "@/components/modules/campaign/success-stories/SuccessStories";
+import { CampaignVirtualList, type VirtualCampaignItem } from "@/components/modules/campaign/CampaignVirtualList";
 
 export default function CampaignsDirectoryPage() {
-  const campaigns = [
+  const campaigns: VirtualCampaignItem[] = [
     {
       id: "camp-101",
       title: "Save the Amazon RainForest Reserve",
@@ -84,9 +85,8 @@ export default function CampaignsDirectoryPage() {
       {/* Success Stories Section */}
       <SuccessStories />
 
-      {/* Campaigns Grid */}
-      <div className="grid grid-cols-1 md-grid-cols-2 gap-6">
-        {campaigns.map((c) => {
+      {/* Campaigns Grid — virtualized for large discovery results (issue #982) */}
+      <CampaignVirtualList campaigns={campaigns} renderCampaign={(c) => {
           const progress = Math.round((parseFloat(c.raisedAmount.replace(/,/g, "")) / parseFloat(c.goalAmount.replace(/,/g, ""))) * 100);
           return (
             <div
@@ -143,9 +143,8 @@ export default function CampaignsDirectoryPage() {
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+        );
+      }} />
     </div>
   );
 }
