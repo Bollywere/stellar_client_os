@@ -128,6 +128,8 @@ pub struct Campaign {
     /// Address of the planter assigned to this campaign, if any.
     /// `OptionalAddress::None` means no planter has been assigned yet.
     pub planter: OptionalAddress,
+    /// Declared tree species for this campaign.
+    pub tree_species: soroban_sdk::String,
 }
 
 /// A single co-creator on a campaign team and the share of the proceeds they
@@ -166,6 +168,7 @@ pub struct CampaignCreatedEvent {
     /// Unix timestamp deadline for contributions.
     pub deadline: u64,
     pub co2_multiplier: u32,
+    pub tree_species: soroban_sdk::String,
 }
 
 /// Emitted each time a contributor adds tokens to a campaign.
@@ -389,6 +392,8 @@ pub enum Error {
     TeamDuplicateMember = 22,
     /// Campaign ID space exhausted (u64::MAX reached).
     ContractFull = 23,
+    /// Uploaded photo species does not match campaign declared species.
+    SpeciesMismatch = 24,
 }
 
 // ---------------------------------------------------------------------------
@@ -507,6 +512,7 @@ impl CampaignFundingContract {
         min_target: i128,
         deadline: u64,
         insurance_fee: i128,
+        tree_species: soroban_sdk::String,
     ) -> u64 {
         let mut creators = Vec::new(&env);
         creators.push_back(creator);
@@ -521,6 +527,7 @@ impl CampaignFundingContract {
             min_target,
             deadline,
             insurance_fee,
+            tree_species,
         )
     }
 
@@ -535,6 +542,7 @@ impl CampaignFundingContract {
         min_target: i128,
         deadline: u64,
         insurance_fee: i128,
+        tree_species: soroban_sdk::String,
     ) -> u64 {
         Self::assert_initialized(&env);
         Self::validate_creators(&env, &creators, &revenue_shares);
@@ -611,6 +619,7 @@ impl CampaignFundingContract {
             status: CampaignStatus::Active,
             created_at: now,
             planter: OptionalAddress::None,
+            tree_species: tree_species.clone(),
         };
 
         Self::save_campaign(&env, count, &campaign);
@@ -626,6 +635,7 @@ impl CampaignFundingContract {
                 min_target,
                 deadline,
                 co2_multiplier,
+                tree_species,
             },
         );
 
@@ -1560,10 +1570,15 @@ impl CampaignFundingContract {
     }
 
     /// Mark a tree planting batch as verified on-chain.
-    pub fn verify_tree_planting(env: Env, campaign_id: u64, planting_id: u64) {
+    pub fn verify_tree_planting(env: Env, campaign_id: u64, planting_id: u64, photo_species: soroban_sdk::String) {
         Self::assert_initialized(&env);
         let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
         admin.require_auth();
+
+        let campaign = Self::load_campaign(&env, campaign_id);
+        if campaign.tree_species != photo_species {
+            panic_with_error!(&env, Error::SpeciesMismatch);
+        }
 
         let key = DataKey::PlantingSla(campaign_id, planting_id);
         let mut record: PlantingSlaRecord = env
