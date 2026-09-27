@@ -26,6 +26,60 @@ export class FraudDetectionService {
     const flags: SuspiciousActivityFlag[] = [];
     const backers = input.backers || [];
     const transactions = input.transactions || [];
+    const addFlag = (patternType: FraudPatternType, description: string, severityScore: number, evidenceDetails: Record<string, unknown>) => {
+      flags.push({
+        id: `flag-${patternType.toLowerCase()}-${Date.now()}-${flags.length}`,
+        patternType,
+        description,
+        severityScore,
+        evidenceDetails,
+        detectedAt: new Date().toISOString(),
+      });
+    };
+
+    // Unrealistic planting claims relative to time and target.
+    if (input.treeCount !== undefined && input.treeCount >= 0) {
+      const duration = Math.max(1, input.campaignDurationDays ?? 30);
+      const treesPerDay = input.treeCount / duration;
+      const targetRatio = input.targetTrees && input.targetTrees > 0 ? input.treeCount / input.targetTrees : 0;
+      if (treesPerDay > 10_000 || targetRatio > 10) {
+        addFlag('UNREALISTIC_TREE_COUNT', 'Reported tree count is inconsistent with the campaign duration or target.', 82, {
+          treeCount: input.treeCount, targetTrees: input.targetTrees ?? null, campaignDurationDays: duration, treesPerDay,
+        });
+      }
+    }
+
+    // Reused verifier identities or verified totals exceeding the claim.
+    const verifications = input.verifications ?? [];
+    const verifierIds = verifications.map((item) => item.verifierId).filter(Boolean) as string[];
+    const duplicateVerifier = verifierIds.length !== new Set(verifierIds).size;
+    const verifiedTreeTotal = verifications.filter((item) => item.status === 'verified').reduce((sum, item) => sum + (item.treeCount ?? 0), 0);
+    if (duplicateVerifier || (input.treeCount !== undefined && verifiedTreeTotal > input.treeCount)) {
+      addFlag('SUSPICIOUS_VERIFICATION', 'Verification records contain repeated verifier identities or exceed the campaign tree claim.', 78, {
+        duplicateVerifier, verificationCount: verifications.length, verifiedTreeTotal, treeCount: input.treeCount ?? null,
+      });
+    }
+
+    // Bot-like sponsor identity and verification signals.
+    const botSignals = backers.filter((backer) => backer.verificationStatus === 'failed' || (backer.accountAgeDays !== undefined && backer.accountAgeDays < 1)).length;
+    const userAgents = backers.map((backer) => backer.userAgent).filter(Boolean) as string[];
+    const repeatedUserAgent = userAgents.length > 2 && new Set(userAgents).size < userAgents.length / 2;
+    if (botSignals >= 3 || repeatedUserAgent) {
+      addFlag('BOT_SPONSORS', 'Sponsor profiles show concentrated bot-like identity or verification signals.', 80, {
+        botSignals, repeatedUserAgent, sponsorCount: backers.length,
+      });
+    }
+
+    // Only flag a location mismatch when a meaningful share of samples agrees.
+    if (input.location && backers.length > 0) {
+      const expected = input.location.trim().toLowerCase();
+      const mismatches = backers.filter((backer) => backer.location && !backer.location.toLowerCase().includes(expected)).length;
+      if (mismatches >= Math.max(2, Math.ceil(backers.length * 0.5))) {
+        addFlag('LOCATION_MISMATCH', 'Sponsor location samples do not match the campaign location.', 68, {
+          campaignLocation: input.location, mismatches, sampledSponsors: backers.length,
+        });
+      }
+    }
 
     // 1. Detect Fake Backers & Bot Clusters (e.g. many pledges created within same minute)
     if (backers.length > 5) {

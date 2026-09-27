@@ -1,5 +1,6 @@
 import { MILESTONE_PERCENTAGES } from "../lib/campaign-milestones";
 import { EmailService, type SendEmailOptions } from "./email.service";
+import { getSeasonalCarbonCreditIncentive } from "./campaign-rewards.service";
 
 export type CampaignStatus = "DRAFT" | "PENDING_VERIFICATION" | "ACTIVE" | "PAUSED" | "COMPLETED" | "FAILED";
 
@@ -135,6 +136,12 @@ export interface CampaignRecord {
   raisedAmount: string;
   sponsorCount: number;
   treeCount: number;
+  /** Optional explicit tier; API limits otherwise derive it from goalAmount. */
+  fundingTier?: "basic" | "pro" | "enterprise";
+  /** Carbon-credit multiplier fixed at campaign creation time. */
+  carbonCreditMultiplier?: 1 | 1.5 | 2;
+  /** Human-readable reason for the seasonal incentive. */
+  seasonalIncentive?: "STANDARD" | "EARTH_MONTH_OR_ARBOR_DAY" | "RAINY_SEASON";
   /** Tradeable CO2 offset certificates issued to sponsors. */
   carbonCertificates?: CampaignCarbonCertificate[];
   createdAt: number;
@@ -520,6 +527,7 @@ export async function createCampaign(input: {
   goalAmount: string;
   network?: "testnet" | "mainnet";
 }, dataSource = getCampaignDataSource(), now = Date.now()): Promise<CampaignRecord> {
+  const seasonal = getSeasonalCarbonCreditIncentive(now);
   const campaign: CampaignRecord = {
     id: input.id ?? crypto.randomUUID(),
     creator: input.creator,
@@ -535,6 +543,8 @@ export async function createCampaign(input: {
     raisedAmount: "0",
     sponsorCount: 0,
     treeCount: 0,
+    carbonCreditMultiplier: seasonal.multiplier,
+    seasonalIncentive: seasonal.reason,
     createdAt: now,
     updatedAt: now,
     statusChangedAt: now,

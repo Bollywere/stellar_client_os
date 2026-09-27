@@ -1,5 +1,6 @@
 import { getCampaign, transitionCampaignStatus } from "../../../../services/campaign.service";
 import { autoTranslate, detectLanguage, SUPPORTED_TRANSLATION_LOCALES } from "@/lib/translation";
+import { checkCampaignRateLimit } from "@/lib/campaign-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,8 +11,12 @@ function noStore<T>(body: T, init?: ResponseInit): Response {
   return Response.json(body, { ...init, headers: { ...NO_STORE_HEADERS, ...(init?.headers ?? {}) } });
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const campaign = await getCampaign((await params).id);
+  if (campaign) {
+    const limited = await checkCampaignRateLimit(request, campaign);
+    if (!limited.allowed) return noStore({ error: "Too many requests", code: "RATE_LIMIT_EXCEEDED" }, { status: 429, headers: limited.headers });
+  }
   return campaign ? noStore(campaign) : noStore({ error: "Campaign not found" }, { status: 404 });
 }
 
@@ -19,6 +24,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const id = (await params).id;
   const campaign = await getCampaign(id);
   if (!campaign) return noStore({ error: "Campaign not found" }, { status: 404 });
+  const limited = await checkCampaignRateLimit(request, campaign);
+  if (!limited.allowed) return noStore({ error: "Too many requests", code: "RATE_LIMIT_EXCEEDED" }, { status: 429, headers: limited.headers });
 
   try {
     const body = await request.json() as {
