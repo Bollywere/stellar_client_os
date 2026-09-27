@@ -2056,7 +2056,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(id, 1);
         assert_eq!(client.get_campaign_count(), 1);
 
@@ -2100,8 +2100,8 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &1_000);
 
-        let id1 = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
-        let id2 = client.create_campaign(&creator, &token, &20_000, &10_000, &3_000, &500);
+        let id1 = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
+        let id2 = client.create_campaign(&creator, &token, &20_000, &10_000, &3_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
         assert_eq!(client.get_campaign_count(), 2);
@@ -2125,7 +2125,7 @@ mod tests {
                 .set(&DataKey::CampaignCount, &u64::MAX);
         });
 
-        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2138,7 +2138,7 @@ mod tests {
         let client = CampaignFundingContractClient::new(&env, &contract_id);
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
-        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2150,7 +2150,7 @@ mod tests {
         let (_, client, _, _) = setup_contract(&env);
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
-        client.create_campaign(&creator, &token, &0, &0, &2_000, &500);
+        client.create_campaign(&creator, &token, &0, &0, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2163,7 +2163,7 @@ mod tests {
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
         // min_target (6_000) > target_amount (5_000)
-        client.create_campaign(&creator, &token, &5_000, &6_000, &2_000, &500);
+        client.create_campaign(&creator, &token, &5_000, &6_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2175,7 +2175,7 @@ mod tests {
         let (_, client, _, _) = setup_contract(&env);
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
-        client.create_campaign(&creator, &token, &10_000, &0, &2_000, &500);
+        client.create_campaign(&creator, &token, &10_000, &0, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2188,7 +2188,7 @@ mod tests {
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
         // deadline (2_000) < current time (5_000)
-        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     #[test]
@@ -2202,7 +2202,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
         let deadline = 1_000 + (90 * 24 * 60 * 60);
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(id, 1);
     }
 
@@ -2217,7 +2217,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
         let deadline = 1_000 + MAX_CAMPAIGN_DURATION_SECONDS;
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(id, 1);
     }
 
@@ -2231,7 +2231,7 @@ mod tests {
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
         let deadline = 1_000 + MAX_CAMPAIGN_DURATION_SECONDS + 1;
-        client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500);
+        client.create_campaign(&creator, &token, &10_000, &5_000, &deadline, &500, &soroban_sdk::String::from_str(&env, "Oak"));
     }
 
     // -----------------------------------------------------------------------
@@ -2253,7 +2253,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000);
 
         let campaign = client.get_campaign(&id);
@@ -2278,7 +2278,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &1_000);
         client.contribute(&contributor, &id, &2_000);
 
@@ -2302,7 +2302,7 @@ mod tests {
         token_admin_client.mint(&contrib1, &5_000);
         token_admin_client.mint(&contrib2, &5_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contrib1, &id, &3_000);
         client.contribute(&contrib2, &id, &2_000);
 
@@ -2326,7 +2326,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
 
         // Advance past deadline.
         set_time(&env, 3_000);
@@ -2347,7 +2347,7 @@ mod tests {
         let contributor = Address::generate(&env);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &0);
     }
 
@@ -2366,7 +2366,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &20_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         // 11_000 > target_amount (10_000)
         client.contribute(&contributor, &id, &11_000);
     }
@@ -2401,7 +2401,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         // Contribute the full hard cap in one shot.
         client.contribute(&contributor, &id, &10_000);
 
@@ -2428,7 +2428,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &6_000); // > min_target
 
         // Advance past deadline.
@@ -2452,7 +2452,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // < min_target
 
         set_time(&env, 3_000);
@@ -2472,7 +2472,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
 
@@ -2491,7 +2491,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         // Still before deadline — must panic.
         client.trigger_expiry(&id);
     }
@@ -2511,7 +2511,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // First call → Failed
@@ -2531,7 +2531,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         set_time(&env, 3_000);
         // Called with no auth mocking — just default env.
         client.trigger_expiry(&id);
@@ -2556,7 +2556,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &8_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -2587,7 +2587,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &6_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -2609,7 +2609,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.claim_funds(&id); // Still Active — must panic.
     }
 
@@ -2625,7 +2625,7 @@ mod tests {
         let (token, _, token_admin_client) = create_token(&env, &token_admin);
         token_admin_client.mint(&creator, &500);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // → Failed
         client.claim_funds(&id); // Must panic.
@@ -2646,7 +2646,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &6_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -2672,7 +2672,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // < min_target
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // → Failed
@@ -2703,14 +2703,14 @@ mod tests {
         token_admin_client.mint(&contrib2, &1_500);
         token_admin_client.mint(&contrib3, &500);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contrib1, &id, &3_000);
         client.contribute(&contrib2, &id, &1_500);
         client.contribute(&contrib3, &id, &500); // total = 5_000 == min_target
 
         // Bring total below min_target by using a campaign where min > raised.
         // (For simplicity create a new campaign with higher min_target.)
-        let id2 = client.create_campaign(&creator, &token_addr, &10_000, &6_000, &2_000, &500);
+        let id2 = client.create_campaign(&creator, &token_addr, &10_000, &6_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         let contrib4 = Address::generate(&env);
         token_admin_client.mint(&contrib4, &4_000);
         client.contribute(&contrib4, &id2, &4_000); // 4_000 < 6_000 (min)
@@ -2737,7 +2737,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &5_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &1_000);
         // Campaign still Active — refund must panic.
         client.refund(&contributor, &id);
@@ -2758,7 +2758,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &7_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // → Successful
@@ -2778,7 +2778,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         let outsider = Address::generate(&env);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // → Failed
                                     // `outsider` never contributed — must panic.
@@ -2800,7 +2800,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &5_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &2_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -2865,7 +2865,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &9_999);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -2889,7 +2889,7 @@ mod tests {
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
 
         let history = client.get_status_history(&id);
         assert_eq!(history.len(), 1);
@@ -2920,7 +2920,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
         set_time(&env, 1_500);
         client.contribute(&contributor, &id, &10_000); // Auto-succeed
 
@@ -2945,7 +2945,7 @@ mod tests {
         let contributor = Address::generate(&env);
         token_admin_client.mint(&contributor, &3_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // Below min_target
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // → Failed
@@ -2971,7 +2971,7 @@ mod tests {
         let contributor = Address::generate(&env);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &10_000); // Auto-succeed
         set_time(&env, 3_000);
         client.claim_funds(&id);
@@ -2991,7 +2991,7 @@ mod tests {
 
         let history = client.get_status_history(&99);
         assert_eq!(history.len(), 0);
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &8_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -3030,7 +3030,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &6_000);
         set_time(&env, 3_000);
         client.trigger_expiry(&id);
@@ -3069,7 +3069,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &2_000); // 20 % < 25 %
 
         assert_eq!(client.get_milestones_reached(&id).len(), 0);
@@ -3089,7 +3089,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // 30 % -> 25 % milestone
 
         // env.events() reflects only the last external call, so capture it
@@ -3126,7 +3126,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         // A single 6_000 contribution crosses both the 25 % and 50 % marks.
         client.contribute(&contributor, &id, &6_000);
 
@@ -3165,7 +3165,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &10_000); // reaches the hard cap
 
         assert_eq!(client.get_campaign(&id).status, CampaignStatus::Successful);
@@ -3191,7 +3191,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // 30 % -> crosses 25 %
 
         // Capture events after the first contribution to assert the 25 % event.
@@ -3247,7 +3247,7 @@ mod tests {
         token_admin_client.mint(&creator, &500);
         token_admin_client.mint(&contributor, &10_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &500, &soroban_sdk::String::from_str(&env, "Oak"));
         client.contribute(&contributor, &id, &3_000); // crosses 25 %
         set_time(&env, 3_000);
         client.trigger_expiry(&id); // 3_000 < 5_000 min -> Failed
@@ -3276,7 +3276,7 @@ mod tests {
         let creator = Address::generate(&env);
         let token = Address::generate(&env);
 
-        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(client.get_campaign(&id).status, CampaignStatus::Active);
 
         // Pause campaign
@@ -3302,19 +3302,19 @@ mod tests {
         let contributor = Address::generate(&env);
         token_admin_client.mint(&contributor, &5_000);
 
-        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000);
+        let id = client.create_campaign(&creator, &token_addr, &10_000, &5_000, &2_000, &soroban_sdk::String::from_str(&env, "Oak"));
         client.pause_campaign(&id);
 
         // Must panic with CampaignPaused (#18)
         client.contribute(&contributor, &id, &1_000);
         // May 15, 2026 (rainy season -> 2x multiplier)
         set_time(&env, 1_778_800_000);
-        let id_rainy = client.create_campaign(&creator, &token, &10_000, &5_000, &1_778_900_000);
+        let id_rainy = client.create_campaign(&creator, &token, &10_000, &5_000, &1_778_900_000, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(client.get_co2_multiplier(&id_rainy), 2);
 
         // January 15, 2026 (non-rainy season -> 1x multiplier)
         set_time(&env, 1_768_400_000);
-        let id_dry = client.create_campaign(&creator, &token, &10_000, &5_000, &1_768_500_000);
+        let id_dry = client.create_campaign(&creator, &token, &10_000, &5_000, &1_768_500_000, &soroban_sdk::String::from_str(&env, "Oak"));
         assert_eq!(client.get_co2_multiplier(&id_dry), 1);
     }
 
