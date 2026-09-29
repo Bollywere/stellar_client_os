@@ -245,6 +245,44 @@ paths:
               schema: { type: string, format: binary }
         '400': { $ref: '#/components/responses/BadRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/campaigns/{id}/impact:
+    get:
+      tags: [Campaigns]
+      summary: Query historical campaign ecological impact over time
+      operationId: getCampaignImpactHistory
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - name: date
+          in: query
+          required: false
+          description: ISO date (YYYY-MM-DD) or timestamp to query historical impact for a specific date
+          schema: { type: string }
+        - name: startDate
+          in: query
+          required: false
+          schema: { type: string }
+        - name: endDate
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Historical impact metrics including tree count, CO2 sequestration, and sponsor count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      campaignId: { type: string }
+                      campaignName: { type: string }
+                      currentImpact: { type: object }
+                      impactAtDate: { type: object }
+                      timeline: { type: array, items: { type: object } }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/certificates:
     post:
       tags: [Certificates]
