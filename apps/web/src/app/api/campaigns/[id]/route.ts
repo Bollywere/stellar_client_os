@@ -11,7 +11,7 @@ function noStore<T>(body: T, init?: ResponseInit): Response {
   return Response.json(body, { ...init, headers: { ...NO_STORE_HEADERS, ...(init?.headers ?? {}) } });
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET((_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const campaign = await getCampaign((await params).id);
   if (campaign) {
     const limited = await checkCampaignRateLimit(request, campaign);
