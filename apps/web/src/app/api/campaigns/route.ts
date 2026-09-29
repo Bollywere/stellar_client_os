@@ -24,6 +24,7 @@ async function getCampaigns(request: Request) {
     const totalTrees = campaigns.reduce((sum, campaign) => sum + (Number(campaign.treesPlanted) || 0), 0);
     const totalSponsors = campaigns.reduce((sum, campaign) => sum + (Number(campaign.sponsorCount) || 0), 0);
     const totalCo2 = campaigns.reduce((sum, campaign) => sum + (Number(campaign.co2Sequestered) || 0), 0);
+    const diverseCampaigns = campaigns.filter((campaign) => campaign.geographicDiversity?.bonusApplied).length;
     return Response.json({
       data: campaigns,
       pagination: { limit, offset, count: campaigns.length },
@@ -32,6 +33,7 @@ async function getCampaigns(request: Request) {
         totalTrees,
         totalSponsors,
         totalCo2,
+        diverseCampaigns,
         profileUrl: `/creators/${encodeURIComponent(creator)}`,
       },
     });
