@@ -37,6 +37,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const id = (await params).id;
   const campaign = await getCampaign(id);
   if (!campaign) return noStore({ error: "Campaign not found" }, { status: 404 });
+  const limited = await checkCampaignRateLimit(request, campaign);
+  if (!limited.allowed) return noStore({ error: "Too many requests", code: "RATE_LIMIT_EXCEEDED" }, { status: 429, headers: limited.headers });
 
   try {
     const body = await request.json() as {
