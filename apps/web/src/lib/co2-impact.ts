@@ -41,11 +41,11 @@ export interface Co2ImpactResult {
  * (issue #714)
  */
 export function isRainySeason(dateOrTimestamp?: Date | number): boolean {
-  const date = dateOrTimestamp
-    ? typeof dateOrTimestamp === "number"
+  if (dateOrTimestamp === undefined) return false;
+  const date =
+    typeof dateOrTimestamp === "number"
       ? new Date(dateOrTimestamp * 1000)
-      : dateOrTimestamp
-    : new Date();
+      : dateOrTimestamp;
   const month = date.getMonth() + 1; // 1-indexed (1=Jan, 5=May, 10=Oct)
   return month >= 5 && month <= 10;
 }
@@ -63,12 +63,17 @@ export function calculateCo2Offset(
   speciesId: string,
   quantity: number,
   dateOrTimestamp?: Date | number,
+  growthRateMultiplier: number = 1.0,
 ): Co2ImpactResult {
   const species = getTreeSpecies(speciesId);
   const qty = Math.max(0, Math.floor(quantity) || 0);
 
-  const rainySeason = isRainySeason(dateOrTimestamp);
-  const co2Multiplier = rainySeason ? 2 : 1;
+  // The rainy-season bonus is a property of a known planting date. Callers
+  // without one (projection calculators, growth-stage models) must get a
+  // deterministic baseline rather than a multiplier that silently changes
+  // with the current calendar month (issue #907).
+  const rainySeason = dateOrTimestamp !== undefined && isRainySeason(dateOrTimestamp);
+  const co2Multiplier = (rainySeason ? 2 : 1) * growthRateMultiplier;
 
   const baseCo2PerYearKg = qty * species.co2PerTreePerYearKg;
   const co2PerYearKg = baseCo2PerYearKg * co2Multiplier;
