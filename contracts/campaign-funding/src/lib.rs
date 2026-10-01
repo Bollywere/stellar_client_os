@@ -276,6 +276,16 @@ pub struct FundsClaimedEvent {
     pub amount: i128,
 }
 
+/// Emitted when the verifier approves a campaign's escrow for payout.
+#[contracttype]
+#[derive(Clone)]
+pub struct CampaignVerificationApprovedEvent {
+    /// Identifier of the approved campaign.
+    pub campaign_id: u64,
+    /// Unix timestamp when the approval was recorded.
+    pub approved_at: u64,
+}
+
 /// Emitted each time a contributor successfully claims a refund.
 #[contracttype]
 #[derive(Clone)]
@@ -1241,6 +1251,8 @@ impl CampaignFundingContract {
     /// * [`Error::CampaignNotSuccessful`] — campaign is not `Successful`.
     /// * [`Error::AlreadyClaimed`]        — funds were already claimed.
     /// * [`Error::Unauthorized`]          — the creator group did not authorise.
+    /// * [`Error::VerificationNotApproved`] — the verifier has not approved
+    ///   the campaign's planting records.
     pub fn claim_funds(env: Env, campaign_id: u64) {
         let mut campaign = Self::load_campaign(&env, campaign_id);
 
@@ -1252,6 +1264,14 @@ impl CampaignFundingContract {
         }
         if campaign.status != CampaignStatus::Verified {
             panic_with_error!(&env, Error::CampaignNotVerified);
+        }
+        if !env
+            .storage()
+            .persistent()
+            .get(&DataKey::VerificationApproved(campaign_id))
+            .unwrap_or(false)
+        {
+            panic_with_error!(&env, Error::VerificationNotApproved);
         }
 
         let gross = campaign.total_raised;
@@ -1310,6 +1330,58 @@ impl CampaignFundingContract {
                 campaign_id,
                 creator: campaign.creator,
                 amount: distributable,
+            },
+        );
+    }
+
+    /// Approve a successful campaign for payout after all recorded planting
+    /// batches have been verified by the contract admin.
+    pub fn approve_campaign_verification(env: Env, campaign_id: u64) {
+        Self::assert_initialized(&env);
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .unwrap_or_else(|| panic_with_error!(&env, Error::NotInitialized));
+        admin.require_auth();
+
+        let campaign = Self::load_campaign(&env, campaign_id);
+        if campaign.status != CampaignStatus::Successful {
+            panic_with_error!(&env, Error::CampaignNotSuccessful);
+        }
+
+        let planting_count: u64 = env
+            .storage()
+            .instance()
+            .get(&DataKey::PlantingCount(campaign_id))
+            .unwrap_or(0);
+        if planting_count == 0 {
+            panic_with_error!(&env, Error::PlantingNotFound);
+        }
+
+        for planting_id in 1..=planting_count {
+            let record: PlantingSlaRecord = env
+                .storage()
+                .persistent()
+                .get(&DataKey::PlantingSla(campaign_id, planting_id))
+                .unwrap_or_else(|| panic_with_error!(&env, Error::PlantingNotFound));
+            if !record.is_verified {
+                panic_with_error!(&env, Error::VerificationNotApproved);
+            }
+        }
+
+        let approval_key = DataKey::VerificationApproved(campaign_id);
+        env.storage().persistent().set(&approval_key, &true);
+        env.storage()
+            .persistent()
+            .extend_ttl(&approval_key, LEDGER_THRESHOLD, LEDGER_BUMP);
+
+        let approved_at = env.ledger().timestamp();
+        env.events().publish(
+            ("CampaignVerificationApproved", campaign_id),
+            CampaignVerificationApprovedEvent {
+                campaign_id,
+                approved_at,
             },
         );
     }
