@@ -41,9 +41,10 @@ async function getCampaigns(request: Request) {
     ? campaigns.map((campaign) => localizeCampaign(campaign, requestedLanguage))
     : campaigns;
   if (includeStats && creator) {
-    const totalTrees = responseCampaigns.reduce((sum, campaign) => sum + (Number(campaign.treesPlanted) || 0), 0);
+const totalTrees = responseCampaigns.reduce((sum, campaign) => sum + (Number(campaign.treesPlanted) || 0), 0);
     const totalSponsors = responseCampaigns.reduce((sum, campaign) => sum + (Number(campaign.sponsorCount) || 0), 0);
     const totalCo2 = responseCampaigns.reduce((sum, campaign) => sum + (Number(campaign.co2Sequestered) || 0), 0);
+    const diverseCampaigns = responseCampaigns.filter((campaign) => campaign.geographicDiversity?.bonusApplied).length;
     return Response.json({
       data: responseCampaigns,
       pagination: { limit, offset, count: responseCampaigns.length },
@@ -52,6 +53,7 @@ async function getCampaigns(request: Request) {
         totalTrees,
         totalSponsors,
         totalCo2,
+        diverseCampaigns,
         profileUrl: `/creators/${encodeURIComponent(creator)}`,
       },
     });
