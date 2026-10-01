@@ -84,7 +84,7 @@ export const successStories: SuccessStory[] = [
         rating: 5,
       },
     ],
-    impactMetrics: [
+impactMetrics: [
       { label: 'Hectares Protected', value: '25,000' },
       { label: 'Trees Saved', value: '1,500,000+' },
     ],
@@ -126,7 +126,7 @@ export const successStories: SuccessStory[] = [
         rating: 5,
       },
     ],
-    impactMetrics: [
+impactMetrics: [
       { label: 'Wells Installed', value: '8' },
       { label: 'People Served', value: '5,000+' },
     ],

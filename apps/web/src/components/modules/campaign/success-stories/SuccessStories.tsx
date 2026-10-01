@@ -112,7 +112,7 @@ export default function SuccessStories() {
                 </figcaption>
               </div>
 
-              {story.impactMetrics && story.impactMetrics.length > 0 && (
+{story.impactMetrics && story.impactMetrics.length > 0 && (
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 text-sky-400 text-xs font-semibold uppercase tracking-wide">
                     <BarChart className="h-3.5 w-3.5" /> Impact Metrics
@@ -162,7 +162,6 @@ export default function SuccessStories() {
                   )}
                 </div>
               )}
-
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold uppercase tracking-wide">
                   <Users className="h-3.5 w-3.5" /> Backer Testimonials
