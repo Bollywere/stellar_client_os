@@ -1,7 +1,7 @@
 #![no_std]
 use soroban_sdk::{
     contract, contracterror, contractevent, contractimpl, contracttype, panic_with_error, token,
-    Address, Env, Vec,
+    Address, Bytes, BytesN, Env, String, Vec,
 };
 
 /// Optional `Address` wrapper suitable for use inside `#[contracttype]` structs.
@@ -328,6 +328,37 @@ pub struct TreePlantingVerifiedEvent {
     pub campaign_id: u64,
     pub planting_id: u64,
     pub verified_at: u64,
+}
+
+/// Proof of tree species planted, linking uploaded photo hash to declared species.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SpeciesPhotoProof {
+    /// SHA-256 or IPFS digest of the uploaded proof photo.
+    pub photo_hash: BytesN<32>,
+    /// Declared tree species shown in the photo.
+    pub species: String,
+    /// Tree count verified by this photo.
+    pub tree_count: u32,
+}
+
+/// Emitted when campaign creator specifies or declares tree species.
+#[contracttype]
+#[derive(Clone)]
+pub struct SpeciesDeclaredEvent {
+    pub campaign_id: u64,
+    pub species: Vec<String>,
+}
+
+/// Emitted when tree planting photo proof matching declared species is verified.
+#[contracttype]
+#[derive(Clone)]
+pub struct SpeciesProofVerifiedEvent {
+    pub campaign_id: u64,
+    pub planting_id: u64,
+    pub photo_hash: BytesN<32>,
+    pub species: String,
+    pub tree_count: u32,
 }
 
 /// Entitlement unlocked by a campaign's verified tree count.
@@ -2204,6 +2235,202 @@ impl CampaignFundingContract {
                 verified_at: record.verified_at,
             },
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Tree Species Declaration & Verification (Issue #906)
+    // -----------------------------------------------------------------------
+
+    /// Specify and declare tree species for a campaign.
+    ///
+    /// Requires the campaign creator's authorization. Prevents fraud by binding
+    /// the campaign to specific tree species that must be proven during verification.
+    pub fn declare_tree_species(env: Env, campaign_id: u64, species: Vec<String>) {
+        Self::assert_initialized(&env);
+        let campaign = Self::load_campaign(&env, campaign_id);
+        campaign.creator.require_auth();
+
+        if species.len() == 0 {
+            panic_with_error!(&env, Error::EmptySpeciesList);
+        }
+
+        // Validate each species name
+        for s in species.iter() {
+            let len = s.len();
+            if len == 0 || len > 64 {
+                panic_with_error!(&env, Error::InvalidSpeciesName);
+            }
+        }
+
+        let key = DataKey::CampaignSpecies(campaign_id);
+        env.storage().persistent().set(&key, &species);
+        env.storage().persistent().extend_ttl(&key, LEDGER_THRESHOLD, LEDGER_BUMP);
+
+        env.events().publish(
+            ("SpeciesDeclared", campaign_id),
+            SpeciesDeclaredEvent {
+                campaign_id,
+                species,
+            },
+        );
+    }
+
+    /// Retrieve the declared tree species for a campaign.
+    pub fn get_declared_species(env: Env, campaign_id: u64) -> Vec<String> {
+        let key = DataKey::CampaignSpecies(campaign_id);
+        env.storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or_else(|| Vec::new(&env))
+    }
+
+    /// Create a campaign with required tree species declaration in a single call.
+    pub fn create_campaign_with_species(
+        env: Env,
+        creator: Address,
+        token: Address,
+        target_amount: i128,
+        min_target: i128,
+        deadline: u64,
+        insurance_fee: i128,
+        species: Vec<String>,
+    ) -> u64 {
+        let campaign_id = Self::create_campaign(
+            env.clone(),
+            creator,
+            token,
+            target_amount,
+            min_target,
+            deadline,
+            insurance_fee,
+        );
+        Self::declare_tree_species(env, campaign_id, species);
+        campaign_id
+    }
+
+    /// Verify a tree planting batch requiring uploaded photo proof to match declared species.
+    ///
+    /// Fraud prevention: Verifies that uploaded proof photos strictly match the tree
+    /// species specified by the campaign creator. Rejects any proof whose species does
+    /// not match the declared list.
+    pub fn verify_tree_planting_with_species_proof(
+        env: Env,
+        campaign_id: u64,
+        planting_id: u64,
+        proofs: Vec<SpeciesPhotoProof>,
+    ) {
+        Self::assert_initialized(&env);
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+
+        if proofs.len() == 0 {
+            panic_with_error!(&env, Error::SpeciesProofRequired);
+        }
+
+        let declared_species = Self::get_declared_species(env.clone(), campaign_id);
+        if declared_species.len() == 0 {
+            panic_with_error!(&env, Error::SpeciesNotDeclared);
+        }
+
+        // Validate that every photo proof matches one of the declared species
+        for proof in proofs.iter() {
+            let mut matched = false;
+            for declared in declared_species.iter() {
+                if Self::species_matches(&declared, &proof.species) {
+                    matched = true;
+                    break;
+                }
+            }
+            if !matched {
+                // Fraud detected: photo species does not match declared campaign species!
+                panic_with_error!(&env, Error::SpeciesMismatch);
+            }
+        }
+
+        // Proceed to verify the planting SLA record
+        let sla_key = DataKey::PlantingSla(campaign_id, planting_id);
+        let mut record: PlantingSlaRecord = env
+            .storage()
+            .persistent()
+            .get(&sla_key)
+            .unwrap_or_else(|| panic_with_error!(&env, Error::PlantingNotFound));
+
+        if record.is_verified {
+            panic_with_error!(&env, Error::AlreadyVerified);
+        }
+
+        record.is_verified = true;
+        record.verified_at = env.ledger().timestamp();
+        env.storage().persistent().set(&sla_key, &record);
+
+        // Store verified photo proofs for audit trail
+        let proof_key = DataKey::PlantingSpeciesProof(campaign_id, planting_id);
+        env.storage().persistent().set(&proof_key, &proofs);
+        env.storage().persistent().extend_ttl(&proof_key, LEDGER_THRESHOLD, LEDGER_BUMP);
+
+        Self::update_tree_rewards(&env, campaign_id, record.tree_count);
+
+        for proof in proofs.iter() {
+            env.events().publish(
+                ("SpeciesProofVerified", campaign_id),
+                SpeciesProofVerifiedEvent {
+                    campaign_id,
+                    planting_id,
+                    photo_hash: proof.photo_hash,
+                    species: proof.species,
+                    tree_count: proof.tree_count,
+                },
+            );
+        }
+
+        env.events().publish(
+            ("TreePlantingVerified", campaign_id),
+            TreePlantingVerifiedEvent {
+                campaign_id,
+                planting_id,
+                verified_at: record.verified_at,
+            },
+        );
+    }
+
+    /// Retrieve verified species photo proofs for a planting batch.
+    pub fn get_planting_species_proofs(
+        env: Env,
+        campaign_id: u64,
+        planting_id: u64,
+    ) -> Vec<SpeciesPhotoProof> {
+        let key = DataKey::PlantingSpeciesProof(campaign_id, planting_id);
+        env.storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or_else(|| Vec::new(&env))
+    }
+
+    /// Case-insensitive ASCII comparison between two Soroban strings.
+    fn species_matches(s1: &String, s2: &String) -> bool {
+        let len1 = s1.len();
+        let len2 = s2.len();
+        if len1 != len2 {
+            return false;
+        }
+        let b1 = s1.to_bytes();
+        let b2 = s2.to_bytes();
+        let mut i = 0u32;
+        while i < len1 {
+            let mut byte1 = b1.get_unchecked(i);
+            let mut byte2 = b2.get_unchecked(i);
+            if byte1 >= b'A' && byte1 <= b'Z' {
+                byte1 += b'a' - b'A';
+            }
+            if byte2 >= b'A' && byte2 <= b'Z' {
+                byte2 += b'a' - b'A';
+            }
+            if byte1 != byte2 {
+                return false;
+            }
+            i += 1;
+        }
+        true
     }
 
     /// Claim SLA auto-refund if 30-day verification deadline passes without proof verification.
