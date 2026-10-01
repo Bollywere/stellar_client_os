@@ -8,6 +8,7 @@ import {
   getUnderwriterPolicy,
   requestUnderwriterCoverage,
 } from "@/services/campaign-verification.service";
+import { sendCampaignMilestonePush } from "@/services/campaign-notification.service";
 
 const EventSchema = z.object({
   eventType: z.string().refine(isVerificationEventType, "Unsupported verification event type"),
@@ -37,11 +38,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const parsed = EventSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid verification event", details: parsed.error.flatten() }, { status: 400 });
   try {
-    const id = (await params).id;
-    const entry = await appendVerificationEvent(id, parsed.data);
+const campaignId = (await params).id;
+    const entry = await appendVerificationEvent(campaignId, parsed.data);
+    await sendCampaignMilestonePush(campaignId, parsed.data.eventType, entry);
     const insurance =
       parsed.data.underwriterId && parsed.data.coverageAmount
-        ? await requestUnderwriterCoverage(id, parsed.data.underwriterId, parsed.data.coverageAmount)
+        ? await requestUnderwriterCoverage(campaignId, parsed.data.underwriterId, parsed.data.coverageAmount)
         : null;
     return NextResponse.json({ data: { ...entry, insurance } }, { status: 201 });
   } catch (error) {
