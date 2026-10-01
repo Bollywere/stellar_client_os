@@ -7,6 +7,7 @@ members = [
     "nft-stream",
     "campaign-funding",
     "soulbound-badge",
+    "verifier-penalty",
     "planter",
     "campaign-verification-audit",
     "verifier-penalty",
@@ -15,6 +16,8 @@ members = [
     "upgrade-proxy",
     "sponsor-crowdfunding",
     "sponsor-insurance"
+    "sponsor-insurance",
+    "campaign-diversity",
 ]
 
 [workspace.package]
