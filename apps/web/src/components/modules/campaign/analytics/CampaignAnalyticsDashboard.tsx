@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { CampaignFundingVelocityChart } from "../FundingVelocityChart";
 
 export interface CampaignAnalyticsDashboardProps {
   campaignId: string;
@@ -33,7 +34,9 @@ interface DashboardPayload {
   demographics: Array<{ region: string; backers: number; totalAmount: string; share: number }>;
   rewardTiers: Array<{ tierId: string; name: string; price: string; backers: number; revenue: string; share: number }>;
   dailyTrend: Array<{ date: string; amount: string; contributions: number; cumulative: string }>;
+  hourlyTrend?: Array<{ hour: string; amount: string; contributions: number; cumulative: string }>;
   totals: { visitors: number; contributions: number; totalFunded: string; conversionRate: number };
+  speciesDiversity: { speciesCount: number; diversityScore: number; species: string[] };
 }
 
 const BAR_COLORS = ["#a855f7", "#8b5cf6", "#6366f1", "#10b981", "#f59e0b"];
@@ -46,34 +49,40 @@ const EMPTY: DashboardPayload = {
   demographics: [],
   rewardTiers: [],
   dailyTrend: [],
+  hourlyTrend: [],
   totals: { visitors: 0, contributions: 0, totalFunded: "0", conversionRate: 0 },
+  speciesDiversity: { speciesCount: 0, diversityScore: 0, species: [] },
 };
 
 export function CampaignAnalyticsDashboard({
   campaignId,
   campaignTitle = "this campaign",
 }: CampaignAnalyticsDashboardProps) {
-  const [dashboard, setDashboard] = useState<DashboardPayload>(EMPTY);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<{
+    campaignId: string;
+    dashboard: DashboardPayload;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/campaigns/${campaignId}/analytics/dashboard`, { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (!cancelled) setDashboard(payload?.data ?? EMPTY);
+        if (!cancelled) {
+          setResult({ campaignId, dashboard: payload?.data ?? EMPTY });
+        }
       })
       .catch(() => {
-        if (!cancelled) setDashboard(EMPTY);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setResult({ campaignId, dashboard: EMPTY });
       });
     return () => {
       cancelled = true;
     };
   }, [campaignId]);
 
+  const loading = result?.campaignId !== campaignId;
+  const dashboard =
+    result?.campaignId === campaignId ? result.dashboard : EMPTY;
   const hasData = dashboard.totals.visitors > 0 || dashboard.totals.contributions > 0;
 
   if (loading) {
@@ -115,6 +124,7 @@ export function CampaignAnalyticsDashboard({
             <StatCard icon={<Activity className="h-4 w-4 text-blue-400" />} label="Contributions" value={String(dashboard.totals.contributions)} />
             <StatCard icon={<TrendingUp className="h-4 w-4 text-emerald-400" />} label="Total Funded" value={dashboard.totals.totalFunded} suffix="XLM" />
             <StatCard icon={<Gift className="h-4 w-4 text-amber-400" />} label="Conversion" value={`${dashboard.totals.conversionRate}%`} />
+            <StatCard icon={<Globe className="h-4 w-4 text-emerald-400" />} label="Species Diversity" value={String(dashboard.speciesDiversity.diversityScore)} suffix={`${dashboard.speciesDiversity.speciesCount} spp`} />
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -202,6 +212,30 @@ export function CampaignAnalyticsDashboard({
             </MetricPanel>
           </div>
 
+          {/* Campaign Funding Velocity Line Chart (Creator Analytics: Hourly Granularity) */}
+          <CampaignFundingVelocityChart
+            campaignId={campaignId}
+            isCreator={true}
+            variant="creator"
+            granularity="hourly"
+            allowGranularityToggle={true}
+            dailyData={dashboard.dailyTrend.map((point) => ({
+              label: point.date.slice(5),
+              date: point.date,
+              raised: Number(point.amount),
+              contributions: point.contributions,
+              cumulative: Number(point.cumulative),
+            }))}
+            hourlyData={dashboard.hourlyTrend?.map((point) => ({
+              label: point.hour.includes("T") ? point.hour.split("T")[1] : point.hour,
+              hour: point.hour,
+              raised: Number(point.amount),
+              contributions: point.contributions,
+              cumulative: Number(point.cumulative),
+            }))}
+            currency="XLM"
+          />
+
           {/* Daily funding trend */}
           <MetricPanel icon={<TrendingUp className="h-4 w-4 text-emerald-400" />} title="Daily Funding Trend">
             {dailyChartData.length === 0 ? (
@@ -217,6 +251,27 @@ export function CampaignAnalyticsDashboard({
                     <Bar dataKey="fundraising" name="Funded (XLM)" fill="#10b981" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            )}
+          </MetricPanel>
+
+          {/* Tree species diversity */}
+          <MetricPanel icon={<Globe className="h-4 w-4 text-emerald-400" />} title="Tree Species Diversity">
+            {dashboard.speciesDiversity.speciesCount === 0 ? (
+              <p className="text-xs text-zinc-500">Species data appears as trees are registered to this campaign.</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-300">Diversity Score</span>
+                  <span className="font-semibold text-emerald-400">{dashboard.speciesDiversity.diversityScore}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {dashboard.speciesDiversity.species.map((species) => (
+                    <span key={species} className="rounded-full border border-emerald-900 bg-emerald-950/60 px-3 py-1 text-[10px] font-semibold text-emerald-300">
+                      {species}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </MetricPanel>

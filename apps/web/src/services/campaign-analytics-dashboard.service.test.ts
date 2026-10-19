@@ -75,6 +75,32 @@ describe("campaign analytics dashboard", () => {
     expect(dashboard?.totals.totalFunded).toBe("1750");
   });
 
+  it("tracks hourly funding trends and cumulative totals for creator analytics", async () => {
+    const baseHour = Date.UTC(2026, 7, 1, 10, 0, 0); // 10:00 UTC
+    const ONE_HOUR = 3600 * 1000;
+    await recordBackerContribution(campaignId, {
+      amount: "400",
+      backerId: "b1",
+      at: baseHour + 15 * 60 * 1000, // 10:15
+    }, dataSource);
+    await recordBackerContribution(campaignId, {
+      amount: "600",
+      backerId: "b2",
+      at: baseHour + 45 * 60 * 1000, // 10:45
+    }, dataSource);
+    await recordBackerContribution(campaignId, {
+      amount: "800",
+      backerId: "b3",
+      at: baseHour + ONE_HOUR + 10 * 60 * 1000, // 11:10
+    }, dataSource);
+
+    const dashboard = await getCampaignAnalyticsDashboard(campaignId, dataSource, 1);
+    const hourly = dashboard?.hourlyTrend ?? [];
+    expect(hourly).toHaveLength(2);
+    expect(hourly[0]).toMatchObject({ hour: "2026-08-01T10:00", amount: "1000", contributions: 2, cumulative: "1000" });
+    expect(hourly[1]).toMatchObject({ hour: "2026-08-01T11:00", amount: "800", contributions: 1, cumulative: "1800" });
+  });
+
   it("aggregates backer demographics by region", async () => {
     await recordBackerContribution(campaignId, { amount: "1000", backerId: "b1", region: "KE", at: 1 }, dataSource);
     await recordBackerContribution(campaignId, { amount: "500", backerId: "b2", region: "NG", at: 2 }, dataSource);

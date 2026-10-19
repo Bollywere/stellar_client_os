@@ -5,6 +5,8 @@ import { CreatorProfileHeader } from "@/components/creator/CreatorProfileHeader"
 import { CreatorStats } from "@/components/creator/CreatorStats";
 import { CreatorCampaignsList } from "@/components/creator/CreatorCampaignsList";
 import { ShareProfileButton } from "@/components/creator/ShareProfileButton";
+import { getCampaignRatingSummaries, getCreatorOverallRating } from "@/services/campaign-reviews.service";
+import { StarRating } from "@/components/ui/star-rating";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +29,9 @@ export async function generateMetadata({ params }: CreatorProfilePageProps) {
 async function CreatorProfileContent({ address }: { address: string }) {
   try {
     const stats = await getCreatorStats(address);
+    // Overall star rating aggregated from backer reviews (#1250).
+    const overallRating = await getCreatorOverallRating(address);
+    const campaignRatings = getCampaignRatingSummaries(stats.campaigns.map((campaign) => campaign.id));
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -40,12 +45,23 @@ async function CreatorProfileContent({ address }: { address: string }) {
           {/* Impact Stats Cards */}
           <CreatorStats stats={stats} />
 
+          {/* Overall backer rating (#1250) */}
+          <div className="mt-8 flex items-center gap-3 rounded-lg bg-white px-6 py-4 shadow-md">
+            <StarRating value={overallRating.averageRating} size={5} />
+            <span className="text-lg font-semibold text-gray-900">
+              {overallRating.averageRating === null ? "No reviews yet" : overallRating.averageRating}
+            </span>
+            <span className="text-sm text-gray-600">
+              {overallRating.reviewCount} review{overallRating.reviewCount === 1 ? "" : "s"} across {overallRating.campaignCount} campaign{overallRating.campaignCount === 1 ? "" : "s"}
+            </span>
+          </div>
+
           {/* All Campaigns List */}
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               All Campaigns ({stats.totalCampaigns})
             </h2>
-            <CreatorCampaignsList campaigns={stats.campaigns} />
+            <CreatorCampaignsList campaigns={stats.campaigns} ratings={campaignRatings} />
           </div>
         </div>
       </div>

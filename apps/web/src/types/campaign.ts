@@ -78,6 +78,8 @@ export interface CampaignData {
   uniqueContributors?: number;
   contributionCount?: number;
   sustainabilityScore?: CampaignSustainabilityScore;
+  isStaffPick?: boolean;
+  staffPickReason?: string;
 }
 
 export interface CampaignFilterOptions {

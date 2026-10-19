@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CampaignData, CampaignFilterOptions, CampaignStatus, TreeType, Region } from "@/types/campaign";
+import { StaffPickBadge } from "@/components/modules/campaign/StaffPickBadge";
 
 // Sample initial campaign records for demonstration & discovery
 export const INITIAL_CAMPAIGNS: CampaignData[] = [
@@ -38,6 +39,8 @@ export const INITIAL_CAMPAIGNS: CampaignData[] = [
     deadline: Date.now() / 1000 + 86400 * 20,
     location: "Brazil / Peru Basin",
     region: "South America",
+    isStaffPick: true,
+    staffPickReason: "Outstanding community guardianship and verifiable canopy restoration.",
   },
   {
     id: "2",
@@ -498,8 +501,13 @@ export const CampaignSearch: React.FC = () => {
               >
                 <div className="space-y-3">
                   {/* Status & Tree Tag */}
-                  <div className="flex items-center justify-between">
-                    {getStatusBadge(campaign.status)}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {getStatusBadge(campaign.status)}
+                      {campaign.isStaffPick && (
+                        <StaffPickBadge reason={campaign.staffPickReason} size="sm" />
+                      )}
+                    </div>
                     <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
                       {campaign.treeType === "General Fund" ? "💼 General Fund" : `🌲 ${campaign.treeType}`}
                     </span>

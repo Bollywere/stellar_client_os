@@ -1,6 +1,8 @@
 import { getCampaign, transitionCampaignStatus } from "../../../../services/campaign.service";
 import {
   detectLanguage,
+  hasOnlySupportedTranslationLocales,
+  isSupportedTranslationLocale,
   isSupportedTranslationLocale,
   localizeCampaign,
   localeFromAcceptLanguage,
@@ -17,6 +19,20 @@ export const regalidate = 0;
 const NO_STORE_HEADERS = { "Cache-Control": "private, no-store, max-age=0" };
 function noStore<T>(body: T, init?: ResponseInit): Response {
   return Response.json(body, { ...init, headers: { ...NO_STORE_HEADERS, ...(init?.headers ?? {}) } });
+}
+
+const INSURANCE_RATE = 0.01;
+const INSURANCE_WINDOW_YEARS = 2;
+const DEAD_REFUND_RATE = 0.5;
+
+function computeInsurancePool(fundsRaised: number): number {
+  return Math.round(fundsRaised * INSURANCE_RATE * 100) / 100;
+}
+
+function computeInsuranceRefund(pool: number, deadTrees: number, totalTrees: number): number {
+  if (totalTrees <= 0 || deadTrees <= 0) return 0;
+  const ratio = Math.min(deadTrees / totalTrees, 1);
+  return Math.round(pool * ratio * DEAD_REFUND_RATE * 100) / 100;
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -47,15 +63,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       reason?: string;
       name?: string;
       description?: string;
+      pledgeThankYouGreeting?: string;
+      pledgeThankYouBody?: string;
       language?: string;
       translations?: Record<string, string>;
       localizedContent?: Record<string, { name?: string; title?: string; description?: string; location?: string; treeSpecies?: string; region?: string }>;
       autoTranslate?: boolean;
       treeCount?: number;
       co2Sequestration?: string;
+speciesCount?: number;
       countries?: string[];
       location?: string;
     };
+    if (body.language && !isSupportedTranslationLocale(body.language)) {
+      return noStore({ error: "language is not supported" }, { status: 400 });
+    }
+    if (body.translations && !hasOnlySupportedTranslationLocales(body.translations)) {
+      return noStore({ error: "translations contain an unsupported language" }, { status: 400 });
+    }
+    if (body.autoTranslate) {
+      return noStore(
+        { error: "Automatic translation is unavailable. Provide translations for the supported languages." },
+        { status: 501 },
+      );
     if (body.autoTranslate) {
       return noStore({ error: "Automatic translation is not configured; provide reviewed translations instead" }, { status: 501 });
     }
@@ -71,6 +101,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (body.treeCount !== undefined && (!Number.isSafeInteger(body.treeCount) || body.treeCount < 0)) {
       return noStore({ error: "treeCount must be a non-negative whole number" }, { status: 400 });
     }
+    if (body.speciesCount !== undefined && (!Number.isSafeInteger(body.speciesCount) || body.speciesCount < 0)) {
+      return noStore({ error: "speciesCount must be a non-negative whole number" }, { status: 400 });
+    }
     if (body.co2Sequestration !== undefined && (
       typeof body.co2Sequestration !== "string" ||
       !/^\d+(?:\.\d+)?$/.test(body.co2Sequestration) ||
@@ -78,18 +111,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     )) {
       return noStore({ error: "co2Sequestration must be a non-negative decimal string in metric tonnes" }, { status: 400 });
     }
+if (body.fundsRaised !== undefined && (!Number.isFinite(body.fundsRaised) || body.fundsRaised < 0)) {
+      return noStore({ error: "fundsRaised must be a non-negative number" }, { status: 400 });
+    }
+    if (body.deadTrees !== undefined && (!Number.isSafeInteger(body.deadTrees) || body.deadTrees < 0)) {
+      return noStore({ error: "deadTrees must be a non-negative whole number" }, { status: 400 });
+    }
     if (body.countries !== undefined && (!Array.isArray(body.countries) || body.countries.some((c) => typeof c !== "string"))) {
       return noStore({ error: "countries must be an array of strings" }, { status: 400 });
     }
     if (body.location !== undefined && typeof body.location !== "string") {
       return noStore({ error: "location must be a string" }, { status: 400 });
     }
+    if (body.pledgeThankYouGreeting !== undefined && (typeof body.pledgeThankYouGreeting !== "string" || body.pledgeThankYouGreeting.length > 240)) {
+      return noStore({ error: "pledgeThankYouGreeting must be 240 characters or fewer" }, { status: 400 });
+    }
+    if (body.pledgeThankYouBody !== undefined && (typeof body.pledgeThankYouBody !== "string" || body.pledgeThankYouBody.length > 2000)) {
+      return noStore({ error: "pledgeThankYouBody must be 2,000 characters or fewer" }, { status: 400 });
+    }
     let updated = campaign;
     if (body.status) {
       if (!body.changedBy) return noStore({ error: "changedBy is required when changing status" }, { status: 400 });
       updated = await transitionCampaignStatus(campaign, body.status, body.changedBy, body.reason);
     }
-if (body.name !== undefined || body.description !== undefined || body.language !== undefined || body.translations !== undefined || body.localizedContent !== undefined || body.autoTranslate !== undefined || body.treeCount !== undefined || body.co2Sequestration !== undefined || body.countries !== undefined || body.location !== undefined) {
+if (body.name !== undefined || body.description !== undefined || body.language !== undefined || body.translations !== undefined || body.localizedContent !== undefined || body.autoTranslate !== undefined || body.treeCount !== undefined || body.co2Sequestration !== undefined || body.speciesCount !== undefined || body.pledgeThankYouGreeting !== undefined || body.pledgeThankYouBody !== undefined) {
       const language = body.language ? normalizeTranslationLocale(body.language)! : updated.language ?? detectLanguage(body.description ?? updated.description ?? "");
       const translations = { ...updated.translations, ...body.translations };
       const description = body.description ?? updated.description ?? "";
@@ -101,11 +146,14 @@ if (body.name !== undefined || body.description !== undefined || body.language !
         ...updated,
         name: body.name ?? updated.name,
         description,
+        pledgeThankYouGreeting: body.pledgeThankYouGreeting ?? updated.pledgeThankYouGreeting,
+        pledgeThankYouBody: body.pledgeThankYouBody ?? updated.pledgeThankYouBody,
         language,
         translations,
         localizedContent,
         treeCount: body.treeCount ?? updated.treeCount,
         co2Sequestration: body.co2Sequestration ?? updated.co2Sequestration,
+speciesCount: body.speciesCount ?? updated.speciesCount,
         countries: body.countries ?? updated.countries,
         location: body.location ?? updated.location,
         updatedAt: Date.now(),

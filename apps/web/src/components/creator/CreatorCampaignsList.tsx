@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { CampaignCreatorSummary } from "@/services/creator-stats.service";
+import { StarRating } from "@/components/ui/star-rating";
+import type { RatingSummary } from "@/services/campaign-reviews.service";
 
 interface CreatorCampaignsListProps {
   campaigns: CampaignCreatorSummary[];
+  /** Per-campaign review summaries, keyed by campaign id (#1250). */
+  ratings?: Record<string, RatingSummary>;
 }
 
 interface CampaignCardProps {
   campaign: CampaignCreatorSummary;
+  rating?: RatingSummary;
 }
 
-function CampaignCard({ campaign }: CampaignCardProps) {
+function CampaignCard({ campaign, rating }: CampaignCardProps) {
   const statusColors: Record<string, string> = {
     Active: "bg-green-100 text-green-800",
     Successful: "bg-blue-100 text-blue-800",
@@ -37,6 +42,12 @@ function CampaignCard({ campaign }: CampaignCardProps) {
                 {campaign.status}
               </span>
             </div>
+            {rating && rating.reviewCount > 0 && (
+              <div className="flex items-center gap-2 mt-1">
+                <StarRating value={rating.averageRating} size={4} />
+                <span className="text-xs text-gray-600">{rating.averageRating} ({rating.reviewCount})</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -87,7 +98,7 @@ function CampaignCard({ campaign }: CampaignCardProps) {
   );
 }
 
-export function CreatorCampaignsList({ campaigns }: CreatorCampaignsListProps) {
+export function CreatorCampaignsList({ campaigns, ratings }: CreatorCampaignsListProps) {
   if (campaigns.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -99,7 +110,7 @@ export function CreatorCampaignsList({ campaigns }: CreatorCampaignsListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {campaigns.map((campaign) => (
-        <CampaignCard key={campaign.id} campaign={campaign} />
+        <CampaignCard key={campaign.id} campaign={campaign} rating={ratings?.[campaign.id]} />
       ))}
     </div>
   );

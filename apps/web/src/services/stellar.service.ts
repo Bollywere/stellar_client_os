@@ -79,7 +79,7 @@ export class StellarService {
   constructor(config: StellarServiceConfig) {
     this.rpcServer = new RpcServer(
       config.network.rpcUrl,
-      getStellarServerOptions(config.network.rpcUrl)
+      getStellarServerOptions(config.network.rpcUrl, config.network.rpcHeader)
     );
     this.horizonServer = new Horizon.Server(
       config.network.horizonUrl,

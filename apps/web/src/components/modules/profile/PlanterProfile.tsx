@@ -25,6 +25,7 @@ import {
   REFERRAL_BONUS_XLM,
 } from "@/services/social.service";
 import { getCampaignsByCreator, type Campaign } from "@/services/campaign.service";
+import { CreatorSocialSettings } from "@/components/campaign/CreatorSocialSettings";
 
 export interface PlanterProfileProps {
   initialAddress?: string;
@@ -36,6 +37,10 @@ export const PlanterProfile: React.FC<PlanterProfileProps> = ({ initialAddress }
 
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [qrCode, setQrCode] = useState<{ referralUrl: string; dataUrl: string } | null>(null);
+  const stats: PlanterReferralStats = useMemo(
+    () => getPlanterReferralStats(address || ""),
+    [address],
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const stats = useMemo(
     () => getPlanterReferralStats(address || ""),
@@ -46,6 +51,8 @@ export const PlanterProfile: React.FC<PlanterProfileProps> = ({ initialAddress }
   const referralUrl = useMemo(() => {
     return address ? getPlanterReferralUrl(address) : "";
   }, [address]);
+  const qrDataUrl =
+    qrCode?.referralUrl === referralUrl ? qrCode.dataUrl : "";
 
   const activeQrDataUrl = referralUrl ? qrDataUrl : "";
 
@@ -58,8 +65,11 @@ export const PlanterProfile: React.FC<PlanterProfileProps> = ({ initialAddress }
 
   useEffect(() => {
     if (!referralUrl) {
+      setQrCode(null);
       return;
     }
+
+    let cancelled = false;
     QRCode.toDataURL(referralUrl, {
       width: 240,
       margin: 2,
@@ -69,6 +79,7 @@ export const PlanterProfile: React.FC<PlanterProfileProps> = ({ initialAddress }
       },
     })
       .then((url) => {
+        if (!cancelled) setQrCode({ referralUrl, dataUrl: url });
         if (!cancelled) setQrDataUrl(url);
       })
       .catch((err) => console.error("Error generating QR code:", err));
@@ -604,6 +615,9 @@ export const PlanterProfile: React.FC<PlanterProfileProps> = ({ initialAddress }
           </div>
         )}
       </section>
+
+      {/* ── Creator Settings: Social Media Account Connections (#1266) ── */}
+      <CreatorSocialSettings creatorAddress={address} />
     </div>
   );
 };

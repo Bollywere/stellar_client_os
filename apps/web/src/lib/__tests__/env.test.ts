@@ -45,6 +45,14 @@ describe("Environment Variable Validation", () => {
     expect(() => validateEnv()).not.toThrow();
   });
 
+  it("should accept optional NEXT_PUBLIC_SOROBAN_RPC_HEADER when provided", () => {
+    process.env.NEXT_PUBLIC_PAYMENT_STREAM_CONTRACT_ID = "CVALID123";
+    process.env.NEXT_PUBLIC_DISTRIBUTOR_CONTRACT_ID = "CVALID456";
+    process.env.NEXT_PUBLIC_SOROBAN_RPC_HEADER = "Bearer secret-rpc-key";
+    const validated = validateEnv();
+    expect(validated.NEXT_PUBLIC_SOROBAN_RPC_HEADER).toBe("Bearer secret-rpc-key");
+  });
+
   it("should export contract IDs from the env module", () => {
     expect(PAYMENT_STREAM_CONTRACT_ID).toBe(env.NEXT_PUBLIC_PAYMENT_STREAM_CONTRACT_ID);
     expect(DISTRIBUTOR_CONTRACT_ID).toBe(env.NEXT_PUBLIC_DISTRIBUTOR_CONTRACT_ID);

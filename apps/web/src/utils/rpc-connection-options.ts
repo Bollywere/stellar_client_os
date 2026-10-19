@@ -12,8 +12,36 @@ function isLoopbackHttpUrl(url: string): boolean {
 /**
  * Stellar SDK server options for the web app.
  * Plain HTTP is only enabled in non-production builds against loopback hosts.
+ * Optional custom header support for private RPC endpoints.
  */
-export function getStellarServerOptions(url: string): { allowHttp: boolean } {
+export function getStellarServerOptions(
+  url: string,
+  header?: string
+): { allowHttp: boolean; headers?: Record<string, string> } {
   const isDev = process.env.NODE_ENV !== 'production';
-  return { allowHttp: isDev && isLoopbackHttpUrl(url) };
+  const options: { allowHttp: boolean; headers?: Record<string, string> } = {
+    allowHttp: isDev && isLoopbackHttpUrl(url),
+  };
+
+  const headerStr = header !== undefined ? header : process.env.NEXT_PUBLIC_SOROBAN_RPC_HEADER;
+  if (headerStr && headerStr.trim()) {
+    try {
+      if (headerStr.trim().startsWith('{')) {
+        options.headers = JSON.parse(headerStr);
+      } else {
+        const colonIdx = headerStr.indexOf(':');
+        if (colonIdx > -1) {
+          const key = headerStr.substring(0, colonIdx).trim();
+          const val = headerStr.substring(colonIdx + 1).trim();
+          options.headers = { [key]: val };
+        } else {
+          options.headers = { Authorization: headerStr.trim() };
+        }
+      }
+    } catch {
+      options.headers = { Authorization: headerStr.trim() };
+    }
+  }
+
+  return options;
 }

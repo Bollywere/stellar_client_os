@@ -95,6 +95,9 @@ export function useCampaigns() {
             region: c.region,
             location: c.location,
             gpsLocations: c.gpsLocations,
+            isStaffPick: Boolean(c.isStaffPick),
+            staffPickReason: c.staffPickReason,
+            charityBadge: c.charityBadge,
             endDate: c.endDate || c.deadline ? new Date(c.deadline || c.endDate).toISOString() : undefined,
           }));
 

@@ -21,6 +21,9 @@ import {
   normalizeDonationAmount,
   validateDonationAmount,
 } from "@/types/campaign-donation";
+import { EmailService } from "./email.service";
+import type { CampaignEmailer } from "./campaign.service";
+import { buildPledgeThankYouEmail } from "./pledge-thank-you-email.service";
 
 /**
  * One-time charitable campaign donations (issue #1001).
@@ -46,8 +49,11 @@ export type DonationErrorCode =
 export interface CreateDonationInput {
   campaignId: string;
   donorAddress: string;
+  donorName?: string;
+  donorEmail?: string;
   amount: string | number;
   token?: string;
+  rewardTier?: string;
   message?: string;
   anonymous?: boolean;
   txHash?: string;
@@ -74,6 +80,8 @@ export class CampaignDonationService {
   private receipts = new Map<string, DonationReceipt>();
   private idempotency = new Map<string, string>();
 
+  constructor(private readonly emailService: CampaignEmailer = new EmailService()) {}
+
   private idempotencyKey(campaignId: string, key: string): string {
     return `${campaignId.trim()}::${key.trim()}`;
   }
@@ -95,9 +103,18 @@ export class CampaignDonationService {
   ): Promise<DonationResult> {
     const campaignId = input.campaignId?.trim() ?? "";
     const donorAddress = String(input.donorAddress ?? "").trim();
+    const donorEmail = input.donorEmail?.trim();
 
     if (!donorAddress) {
       return { ok: false, error: "A connected wallet address is required.", code: "INVALID_DONOR" };
+    }
+
+    if ((input.donorName?.length ?? 0) > 120 || (input.rewardTier?.length ?? 0) > 120) {
+      return { ok: false, error: "Backer name and reward tier must be 120 characters or fewer.", code: "INVALID_DONOR" };
+    }
+
+    if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
+      return { ok: false, error: "Enter a valid email address.", code: "INVALID_DONOR" };
     }
 
     if (input.message && input.message.trim().length > MAX_DONATION_MESSAGE_LENGTH) {
@@ -192,6 +209,21 @@ export class CampaignDonationService {
       this.idempotency.set(this.idempotencyKey(campaignId, idempotencyKey), donation.id);
     }
 
+    if (donorEmail) {
+      try {
+        const siteUrl = process.env.NEXT_PUBLIC_URL ?? "https://fundable.network";
+        const email = buildPledgeThankYouEmail(recorded.campaign, {
+          backerName: input.donorName,
+          amount,
+          token,
+          rewardTier: input.rewardTier,
+          campaignUrl: new URL(`/campaigns/${encodeURIComponent(campaignId)}`, siteUrl).toString(),
+        });
+        await this.emailService.sendEmail({ to: donorEmail, ...email });
+      } catch {
+        // A mail provider outage must not undo a confirmed on-chain donation.
+      }
+    }
     return {
       ok: true,
       donation,

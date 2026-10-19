@@ -27,8 +27,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const result = await donationService.donate({
     campaignId: id,
     donorAddress: String(body.donorAddress ?? ""),
+    donorName: typeof body.donorName === "string" ? body.donorName : undefined,
+    donorEmail: typeof body.donorEmail === "string" ? body.donorEmail : undefined,
     amount: (body.amount ?? "") as string | number,
     token: body.token as string | undefined,
+    rewardTier: typeof body.rewardTier === "string" ? body.rewardTier : undefined,
     message: body.message as string | undefined,
     anonymous: body.anonymous as boolean | undefined,
     txHash: body.txHash as string | undefined,

@@ -10,6 +10,7 @@ import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import { RootErrorBoundary } from "@/components/ui/root-error-boundary";
 import { SocialProvider } from "@/providers/SocialProvider";
 import { HighContrastProvider } from "@/providers/HighContrastProvider";
+import { SmartAppBanner } from "@/components/SmartAppBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
                     {children}
                   </AppProvider>
                   <WalletModal />
+                  <SmartAppBanner />
                 </RootErrorBoundary>
               </SocialProvider>
             </StellarWalletProvider>

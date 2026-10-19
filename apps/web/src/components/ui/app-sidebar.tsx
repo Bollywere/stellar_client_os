@@ -39,6 +39,11 @@ const items = [
     icon: <BookIcon aria-hidden="true" />,
   },
   {
+    title: "Staff Picks",
+    url: "/campaigns/editorial",
+    icon: <Trophy aria-hidden="true" className="text-amber-400 size-5" />,
+  },
+  {
     title: "Distribution",
     url: "/distribution",
     icon: <DistributionIcon aria-hidden="true" />,

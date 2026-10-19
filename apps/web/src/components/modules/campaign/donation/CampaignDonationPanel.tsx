@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Heart, Receipt } from "lucide-react";
+import { Heart, Receipt, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,11 @@ interface DonationResponse {
  * Donors pick any whole-token amount and give it straight to the campaign —
  * none of it is tied to a specific tree. Funds are released to the creator's
  * discretion for project costs, and every donation returns a receipt.
+ *
+ * As of the campaign insurance pool feature (v1), 1% of every donation is
+ * allocated to the campaign insurance pool. The pool protects sponsors against
+ * tree loss: when trees die within two years of planting, a percentage is
+ * automatically refunded to sponsors from the pool.
  */
 export function CampaignDonationPanel({
   campaignId,
@@ -43,6 +48,8 @@ export function CampaignDonationPanel({
   const { address, isConnected, openModal } = useWallet();
 
   const [amount, setAmount] = useState("");
+  const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
   const [token, setToken] = useState<DonationToken>(defaultToken);
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
@@ -52,6 +59,8 @@ export function CampaignDonationPanel({
 
   const reset = () => {
     setAmount("");
+    setDonorName("");
+    setDonorEmail("");
     setMessage("");
     setAnonymous(false);
     setError("");
@@ -79,6 +88,8 @@ export function CampaignDonationPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           donorAddress: address,
+          donorName: donorName.trim() || undefined,
+          donorEmail: donorEmail.trim() || undefined,
           amount,
           token,
           message: message.trim() || undefined,
@@ -146,6 +157,14 @@ export function CampaignDonationPanel({
 
         <p className="mt-4 text-xs text-zinc-400">{receipt.allocationDescription}</p>
 
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-200">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span data-testid="donation-insurance-notice">
+            1% of your donation funds the campaign insurance pool. If trees die within
+            two years of planting, sponsors receive an automatic refund from the pool.
+          </span>
+        </div>
+
         <Button type="button" variant="outline" className="mt-6" onClick={reset}>
           Make another donation
         </Button>
@@ -162,6 +181,14 @@ export function CampaignDonationPanel({
         </h2>
       </div>
       <p className="mt-2 text-sm text-zinc-400">{DONATION_ALLOCATION_DESCRIPTION}</p>
+
+      <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-200">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <span data-testid="donation-insurance-notice">
+          1% of every donation funds the campaign insurance pool. If trees die within
+          two years of planting, sponsors receive an automatic refund from the pool.
+        </span>
+      </div>
 
       <div className="mt-6">
         <span className="block text-sm text-zinc-300">Quick amounts</span>
@@ -219,6 +246,37 @@ export function CampaignDonationPanel({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="donation-donor-name" className="block text-sm text-zinc-300">
+            Your name (optional)
+          </label>
+          <Input
+            id="donation-donor-name"
+            data-testid="donation-donor-name"
+            maxLength={120}
+            autoComplete="name"
+            value={donorName}
+            onChange={(event) => setDonorName(event.target.value)}
+            className="mt-2"
+          />
+        </div>
+        <div>
+          <label htmlFor="donation-donor-email" className="block text-sm text-zinc-300">
+            Email for a thank-you note (optional)
+          </label>
+          <Input
+            id="donation-donor-email"
+            data-testid="donation-donor-email"
+            type="email"
+            autoComplete="email"
+            value={donorEmail}
+            onChange={(event) => setDonorEmail(event.target.value)}
+            className="mt-2"
+          />
         </div>
       </div>
 
