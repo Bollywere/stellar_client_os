@@ -427,6 +427,13 @@ export const typeDefs = /* GraphQL */`
     cumulative: String!
   }
 
+  type HourlyFundingPoint {
+    hour: String!
+    amount: String!
+    contributions: Int!
+    cumulative: String!
+  }
+
   type CampaignAnalyticsDashboard {
     campaignId: ID!
     updatedAt: Int!
@@ -435,6 +442,7 @@ export const typeDefs = /* GraphQL */`
     demographics: [BackerDemographic!]!
     rewardTiers: [RewardTierStat!]!
     dailyTrend: [DailyFundingPoint!]!
+    hourlyTrend: [HourlyFundingPoint!]
     totals: CampaignAnalyticsTotals!
   }
 
