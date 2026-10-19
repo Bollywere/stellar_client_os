@@ -67,6 +67,12 @@ export interface CampaignRecord {
   uniqueContributors?: number;
   /** Total number of contribution events (derived from `contributions` when omitted). */
   contributionCount?: number;
+  /** Optional content metadata used by personalized recommendations. */
+  species?: readonly string[];
+  /** Geographic focus or location tags for the campaign. */
+  location?: string;
+  /** Environmental causes addressed by the campaign. */
+  environmentalCauses?: readonly string[];
 }
 /** Tunable weights for the three trending signals. */
 export interface TrendingWeights {
@@ -399,6 +405,7 @@ export function scoreTrendingCampaigns(
  */
 export class DefaultCampaignDataSource implements CampaignDataSource {
   async getCampaigns(_network?: string): Promise<CampaignRecord[]> {
+    void _network;
     if (process.env.NODE_ENV === "test") return [];
 
     // Real implementation sketch (production):
@@ -569,7 +576,6 @@ export function getCampaignTrendingService(
   if (!_defaultService) _defaultService = new CampaignTrendingService();
   return _defaultService;
 }
-
 
 
 

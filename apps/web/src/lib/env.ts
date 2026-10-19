@@ -50,6 +50,9 @@ const envSchema = z.object({
   // Optional: Stellar URLs
   NEXT_PUBLIC_STELLAR_HORIZON_URL: z.string().url().optional().or(z.literal("")),
 
+  // Optional: Private RPC Authentication Header
+  NEXT_PUBLIC_SOROBAN_RPC_HEADER: z.string().optional().or(z.literal("")),
+
   // Optional: Bridge configuration
   NEXT_PUBLIC_POLYGON_RPC_URL: z.string().url().optional(),
 
@@ -84,6 +87,7 @@ export function validateEnv(): Env {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_BACKEND_BASE_URL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL,
     NEXT_PUBLIC_STELLAR_HORIZON_URL: process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL,
+    NEXT_PUBLIC_SOROBAN_RPC_HEADER: process.env.NEXT_PUBLIC_SOROBAN_RPC_HEADER,
     NEXT_PUBLIC_POLYGON_RPC_URL: process.env.NEXT_PUBLIC_POLYGON_RPC_URL,
     NEXT_PUBLIC_USDT_CONTRACT_ID: process.env.NEXT_PUBLIC_USDT_CONTRACT_ID,
     NEXT_PUBLIC_EURC_CONTRACT_ID: process.env.NEXT_PUBLIC_EURC_CONTRACT_ID,
@@ -125,6 +129,7 @@ export const env = process.env.NODE_ENV === 'test'
       NEXT_PUBLIC_NETWORK_PASSPHRASE: process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015',
       NEXT_PUBLIC_STELLAR_NETWORK: (process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? 'testnet') as 'testnet' | 'mainnet',
       NEXT_PUBLIC_STELLAR_HORIZON_URL: process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org',
+      NEXT_PUBLIC_SOROBAN_RPC_HEADER: process.env.NEXT_PUBLIC_SOROBAN_RPC_HEADER ?? '',
       NEXT_PUBLIC_USDT_CONTRACT_ID: process.env.NEXT_PUBLIC_USDT_CONTRACT_ID ?? '',
       NEXT_PUBLIC_EURC_CONTRACT_ID: process.env.NEXT_PUBLIC_EURC_CONTRACT_ID ?? '',
     } as ReturnType<typeof validateEnv>)

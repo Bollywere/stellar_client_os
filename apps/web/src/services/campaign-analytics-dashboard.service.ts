@@ -94,6 +94,14 @@ export interface DailyFundingPoint {
   cumulative: string;
 }
 
+export interface HourlyFundingPoint {
+  /** ISO date-hour (YYYY-MM-DDTHH:00) in UTC. */
+  hour: string;
+  amount: string;
+  contributions: number;
+  cumulative: string;
+}
+
 export interface CampaignAnalyticsDashboard {
   campaignId: string;
   updatedAt: number;
@@ -102,6 +110,7 @@ export interface CampaignAnalyticsDashboard {
   demographics: BackerDemographic[];
   rewardTiers: RewardTierStat[];
   dailyTrend: DailyFundingPoint[];
+  hourlyTrend: HourlyFundingPoint[];
   totals: {
     visitors: number;
     contributions: number;
@@ -283,7 +292,7 @@ export async function getCampaignAnalyticsDashboard(
     };
   }).sort((a, b) => b.views - a.views);
 
-  const funnelEntries = FUNNEL_STAGES.map(({ stage, label }) => state.funnel.get(stage)!.size);
+  const funnelEntries = FUNNEL_STAGES.map(({ stage }) => state.funnel.get(stage)!.size);
   const firstStage = funnelEntries[0] ?? 0;
   const funnel: FunnelStage[] = FUNNEL_STAGES.map(({ stage, label }, index) => {
     const count = funnelEntries[index];
@@ -315,7 +324,6 @@ export async function getCampaignAnalyticsDashboard(
     bucket.backers.add(selection.viewerId);
     tierRevenue.set(selection.tierId, bucket);
   }
-  const totalRevenue = sumBigInt(Array.from(tierRevenue.values(), (bucket) => bucket.revenue));
   const rewardTiers: RewardTierStat[] = DEFAULT_REWARD_TIERS.map((tier) => {
     const bucket = tierRevenue.get(tier.tierId);
     const backers = bucket?.backers.size ?? 0;
@@ -342,6 +350,26 @@ export async function getCampaignAnalyticsDashboard(
     };
   });
 
+  const hourlyMap = new Map<string, { contributions: number; amount: bigint }>();
+  for (const contribution of state.contributions) {
+    const hourKey = new Date(contribution.at).toISOString().slice(0, 13) + ":00";
+    const bucket = hourlyMap.get(hourKey) ?? { contributions: 0, amount: 0n };
+    bucket.contributions += 1;
+    bucket.amount += contribution.amount;
+    hourlyMap.set(hourKey, bucket);
+  }
+  const hours = Array.from(hourlyMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+  let hourlyCumulative = 0n;
+  const hourlyTrend: HourlyFundingPoint[] = hours.map(([hour, bucket]) => {
+    hourlyCumulative += bucket.amount;
+    return {
+      hour,
+      amount: bucket.amount.toString(),
+      contributions: bucket.contributions,
+      cumulative: hourlyCumulative.toString(),
+    };
+  });
+
   const totalContributionCount = state.contributions.length;
   const totalFunded = sumBigInt(state.contributions.map((contribution) => contribution.amount));
 
@@ -353,6 +381,7 @@ export async function getCampaignAnalyticsDashboard(
     demographics,
     rewardTiers,
     dailyTrend,
+    hourlyTrend,
     totals: {
       visitors: totalVisitors,
       contributions: totalContributionCount,

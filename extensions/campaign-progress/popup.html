@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fundable Campaign Progress</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Campaign Progress</h1>
+      <button id="refresh" title="Refresh" aria-label="Refresh">⟳</button>
+    </header>
+
+    <ul id="campaigns" aria-live="polite"></ul>
+    <p id="empty" class="muted hidden">No bookmarked campaigns yet. Open a campaign page and press “Bookmark this tab”.</p>
+    <p id="error" class="error hidden"></p>
+
+    <section class="bookmark">
+      <button id="bookmark-tab" class="primary" disabled>Bookmark this tab</button>
+      <span id="tab-hint" class="muted"></span>
+    </section>
+
+    <footer>
+      <label for="api-base">API</label>
+      <input id="api-base" type="text" spellcheck="false" />
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

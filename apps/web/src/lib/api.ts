@@ -1,6 +1,6 @@
 import type { AssembledTransaction } from '@stellar/stellar-sdk/contract';
 import { PAYMENT_STREAM_CONTRACT_ID, DISTRIBUTOR_CONTRACT_ID } from '@/lib/env';
-import { SOROBAN_RPC_URL, NETWORK_PASSPHRASE } from '@/lib/constants';
+import { SOROBAN_RPC_URL, SOROBAN_RPC_HEADER, NETWORK_PASSPHRASE } from '@/lib/constants';
 import { env } from '@/lib/env';
 import { throwIfAborted } from '@/utils/retry';
 import { StellarService, type Stream as ServiceStream, type AccountInfo } from '@/services';
@@ -28,6 +28,7 @@ const stellarService = new StellarService({
     network: {
         networkPassphrase: NETWORK_PASSPHRASE,
         rpcUrl: SOROBAN_RPC_URL,
+        rpcHeader: SOROBAN_RPC_HEADER,
         horizonUrl: HORIZON_URL,
     },
     contracts: {
