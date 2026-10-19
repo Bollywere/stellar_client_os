@@ -133,6 +133,8 @@ export interface NetworkConfig {
   networkPassphrase: string;
   /** Soroban RPC URL */
   rpcUrl: string;
+  /** Optional Soroban RPC Authentication Header */
+  rpcHeader?: string;
   /** Horizon API URL */
   horizonUrl: string;
 }

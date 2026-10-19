@@ -79,7 +79,7 @@ export class StellarService {
   constructor(config: StellarServiceConfig) {
     this.rpcServer = new RpcServer(
       config.network.rpcUrl,
-      getStellarServerOptions(config.network.rpcUrl)
+      getStellarServerOptions(config.network.rpcUrl, config.network.rpcHeader)
     );
     this.horizonServer = new Horizon.Server(
       config.network.horizonUrl,
@@ -208,6 +208,9 @@ export class StellarService {
           {
             type: 'contract',
             contractIds: [this.paymentStreamContractId],
+            topics: [
+              [xdr.ScVal.scvSymbol('stream_created').toXDR('base64'), '*'],
+            ],
           },
         ],
         limit: 1000,

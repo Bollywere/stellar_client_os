@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Fundable Campaign Progress",
+  "version": "1.0.0",
+  "description": "See funding progress and days remaining for your bookmarked Fundable campaigns without visiting the platform.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fundable Campaign Progress"
+  },
+  "permissions": ["storage", "tabs", "bookmarks"],
+  "host_permissions": ["http://localhost:3000/*", "https://*/*", "http://*/*"],
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fundable-campaign-progress@fundable.protocol",
+      "strict_min_version": "115.0"
+    }
+  }
+}
